@@ -13,9 +13,9 @@ The Python script, stats.py, takes as input a SQLite database of no limit Texas 
 
 The helper variables are usually boolean variables that indicate whether a hand or action meets the criteria for a particular poker statistic, such as voluntarily put money in pot (VPIP), continuation bet (cbet), etc. Adding these helper variables facilitates easier analysis through SQL queries and allows for more robust visualization through tools like Tableau.
 
-The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined (with a page number reference to *The Grinder's Manual* where applicable) in comments within stats.py.
+The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
-The script also outputs a smaller database with only the most recent hands (the default is the past 30 days) and with players' last names removed. This step is actually redundant with the sample database I have included here, because hh_sample.sqlite *is* the smaller database already. Normally this smaller database serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
+The script also outputs a smaller database with only the most recent hands (the default is the past month) and with players' last names removed. This step is actually redundant with the sample database I have included here, because hh_sample.sqlite *is* the smaller database already. Normally this smaller database serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
 ### stats.py Usage
 

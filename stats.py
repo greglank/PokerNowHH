@@ -4,6 +4,13 @@ Created on Thu Jun  9 11:01:12 2022
 
 @author: greglank
 
+Script takes as input a SQLite database of no limit Texas hold 'em PokerNow hand histories created by
+history.py and calculates a set of 'helper' variables for poker statistics. It modifies the database tables
+whose names begin with 'Stat' (primarily StatPlayerHands) to record these helper variables for hands
+and actions that do not yet have them. The script also outputs a smaller database with only the most recent
+hands and with players' last names removed.
+
+
 Wish list (XXX):
 -Calculate only new columns (instead of resetting entire db):
     1. Add boolean variable in calc methods to use NewActions vs Actions
@@ -15,7 +22,7 @@ Wish list (XXX):
 ...(e.g. they could have gone all-in preflop)
 -Delete tourney tables from small db
 -Run it twice winning hand for second board (needs to be set in history.py first)
--Duplicate HH file causes tournament calculations to fail because finisher list has redundant entries
+-Duplicate HH file (or duplicate player names) creates redundant entries in finisher list
 ...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)
     
 """
@@ -23,7 +30,7 @@ Wish list (XXX):
 import sqlite3  # sqlite database
 import shutil  # file copy
 import time  # pause
-from Poker.parse import split_sessions  # find most recent sessions
+# from Poker.parse import split_sessions  # find most recent sessions
 
 # test run
 # use clear_db boolean in DB_NAME_LIST to prompt to delete tables (other than PlayerNames/Aliases)
@@ -74,247 +81,31 @@ POS_MIN = 1  # button
 POS_MAX = 8  # utg at 10-player table
 
 
-def try_query(cur, query):
+def try_query(cur, query, values=None):
     '''Tries to execute query and catches exception if it fails.
-    Useful for hacky equivalent to ALTER TABLE IF NOT EXISTS.'''
+    Useful for hacky equivalent to ALTER TABLE IF NOT EXISTS
+    and for troubleshooting pesky DB errors.'''
     
     try:
-        cur.execute(query)
-        print(f'Success: {query}')
-    except:
-        # adding column that already exists throws OperationalError
-        print(f'...Fail: {query}')
-        
+        if values:
+            cur.execute(query, values)
+        else:
+            cur.execute(query)
+        # print(f'Success: {query}')
+    except sqlite3.OperationalError:
+        # adding column that already exists throws sqlite3.OperationalError
+        # so does referencing a table that does not exist in a subquery
+        err = 'OperationalError'
+        print(f'...OperationalError: {query}')
+    except sqlite3.IntegrityError:
+        # failing a UNIQUE constraing throws sqlite3.IntegrityError
+        err = 'IntegrityError'
+        print(f'...IntegrityError: {query}')
+    else:
+        # no exception
+        err = None
 
-def create_stats_table_sparse(conn, db_name, clear_db):
-    '''Creates StatPlayerHands table
-    Wish list: compute stats for new columns only XXX'''
-    
-    cur = conn.cursor()
-    
-    # delete existing databases
-    if test_run or clear_db:
-        db_delete = 'y'
-        if clear_db:
-            db_delete = input(f'Clear existing stats tables for {db_name}? (Y/n): ')
-        if db_delete.lower() == 'y' or db_delete == '':
-            cur.execute('DROP TABLE IF EXISTS StatPlayerHands')
-            cur.execute('DROP TABLE IF EXISTS StatPvP')
-
-    # all tourney stat DBs need to be deleted because sess_num is dynamic
-    cur.execute('DROP TABLE IF EXISTS StatTourneyPlaces')
-    cur.execute('DROP TABLE IF EXISTS StatTourneyHands')
-    
-    query = '''CREATE TABLE IF NOT EXISTS StatPlayerHands
-        (row_num INTEGER,
-        
-         table_id INTEGER,
-         hand_num INTEGER,
-         player_id INTEGER,
-         
-         date_added TIMESTAMP(3),
-         
-         vpip BOOLEAN,
-         pfr BOOLEAN,
-         n_threebet BOOLEAN,
-         threebet BOOLEAN,
-         n_fourbet BOOLEAN,
-         fourbet BOOLEAN,
-         n_face3bet BOOLEAN,
-         rr3bet BOOLEAN,
-         call3bet BOOLEAN,
-         foldto3bet BOOLEAN,
-         n_face4bet BOOLEAN,
-         foldto4bet BOOLEAN,
-         n_callopen BOOLEAN,
-         callopen BOOLEAN,
-         
-         n_cbet_flop BOOLEAN,
-         cbet_flop BOOLEAN,
-         n_cbet_turn BOOLEAN,
-         cbet_turn BOOLEAN,
-         n_cbet_river BOOLEAN,
-         cbet_river BOOLEAN,
-         n_faced_cbet_flop BOOLEAN,
-         foldto_cbet_flop BOOLEAN,
-         raise_cbet_flop BOOLEAN,
-         n_faced_3cbet_flop BOOLEAN,
-         foldto_3cbet_flop BOOLEAN,
-         n_faced_cbet_turn BOOLEAN,
-         foldto_cbet_turn BOOLEAN,
-         n_faced_cbet_river BOOLEAN,
-         foldto_cbet_river BOOLEAN,
-    
-         n_stab_flop BOOLEAN,
-         stab_flop BOOLEAN,
-         n_stab_turn BOOLEAN,
-         stab_turn BOOLEAN,
-         n_stab_river BOOLEAN,
-         stab_river BOOLEAN,
-         n_donk_flop BOOLEAN,
-         donk_flop BOOLEAN,
-         n_donk_turn BOOLEAN,
-         donk_turn BOOLEAN,
-         n_donk_river BOOLEAN,
-         donk_river BOOLEAN,
-         
-         n_rfi BOOLEAN,
-         rfi BOOLEAN,
-         n_rfi_1 BOOLEAN,
-         rfi_1 BOOLEAN,
-         n_rfi_2 BOOLEAN,
-         rfi_2 BOOLEAN,
-         n_rfi_3 BOOLEAN,
-         rfi_3 BOOLEAN,
-         n_rfi_4 BOOLEAN,
-         rfi_4 BOOLEAN,
-         n_rfi_5 BOOLEAN,
-         rfi_5 BOOLEAN,
-         n_rfi_6 BOOLEAN,
-         rfi_6 BOOLEAN,
-         n_rfi_7 BOOLEAN,
-         rfi_7 BOOLEAN,
-         n_rfi_8 BOOLEAN,
-         rfi_8 BOOLEAN,
-         n_rfi_bb BOOLEAN,
-         rfi_bb BOOLEAN,
-         n_rfi_sb BOOLEAN,
-         rfi_sb BOOLEAN,
-    
-         n_wwsf BOOLEAN,
-         wwsf BOOLEAN,
-         won_sd BOOLEAN,
-         n_show BOOLEAN,
-         show BOOLEAN,
-    
-         stack_bb FLOAT,
-         balance_bb FLOAT,
-         bal_bb_running FLOAT,
-         
-         n_limpr BOOLEAN,
-         limpr BOOLEAN,
-         n_cr_flop BOOLEAN,
-         cr_flop BOOLEAN,
-         n_cr_turn BOOLEAN,
-         cr_turn BOOLEAN,
-         n_cr_river BOOLEAN,
-         cr_river BOOLEAN,
-         n_cr_cbet_flop BOOLEAN,
-         cr_cbet_flop BOOLEAN,
-         n_cr_cbet_any BOOLEAN,
-         cr_cbet_any BOOLEAN,
-         
-         n_actions INTEGER DEFAULT 0,
-         n_folds INTEGER DEFAULT 0,
-         n_checks INTEGER DEFAULT 0,
-         n_calls INTEGER DEFAULT 0,
-         n_bets INTEGER DEFAULT 0,
-         n_raises INTEGER DEFAULT 0,
-         n_check_rs INTEGER DEFAULT 0,
-         
-         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
-         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
-         UNIQUE(table_id, hand_num, player_id)
-        )'''
-    cur.execute(query)
-    
-    query = '''INSERT OR IGNORE INTO StatPlayerHands
-        (table_id, hand_num, player_id)
-        SELECT table_id, hand_num, player_id
-        FROM PlayerHands'''
-    cur.execute(query)
-    
-    query = '''CREATE TABLE IF NOT EXISTS StatPvP
-        (table_id INTEGER,
-         hand_num INTEGER,
-         player_id INTEGER,
-         
-         opp_id INTEGER,
-         net_chips INTEGER,
-         net_bb FLOAT,
-         
-         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
-         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
-         FOREIGN KEY(opp_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
-         UNIQUE(table_id, hand_num, player_id, opp_id)
-        )'''
-    cur.execute(query)
-
-    query = '''CREATE TABLE IF NOT EXISTS StatTourneyPlaces
-        (sess_num INTEGER,
-         place INTEGER,
-         player_id INTEGER,
-         FOREIGN KEY(sess_num) REFERENCES TableNames(sess_num) ON UPDATE CASCADE,
-         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
-         UNIQUE(sess_num, player_id)
-        )'''
-    cur.execute(query)
-
-    query = '''CREATE TABLE IF NOT EXISTS StatTourneyHands
-        (sess_num INTEGER,
-         sess_hand INTEGER,
-         table_id INTEGER,
-         hand_num INTEGER,
-         total_stacks INTEGER,
-         total_players INTEGER,
-         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
-         UNIQUE(table_id, hand_num)
-        )'''
-    cur.execute(query)
-
-    conn.commit()
-    cur.close()
-
-
-def create_new_actions_table(conn):
-    '''Creates temporary table of new actions'''
-    
-    cur = conn.cursor()
-    
-    # select actions from hands that have not yet been added
-    # currently checks for null; check for older date XXX
-    print('Adding new actions to database...')
-    query = '''CREATE TEMPORARY TABLE IF NOT EXISTS NewActions AS
-        SELECT Actions.*
-        FROM Actions JOIN StatPlayerHands USING (table_id, hand_num, player_id)
-        WHERE StatPlayerHands.date_added IS NULL'''
-    cur.execute(query)
-    
-    # calculate number of newly-added actions
-    query = 'SELECT COUNT(*) FROM NewActions'
-    cur.execute(query)  
-    num_new = cur.fetchone()[0]
-    print(f'Number of new actions added: {num_new}')
-    
-    conn.commit()
-    cur.close()
-
-    return num_new
-
-
-def create_new_hands_table(conn):
-    '''Creates temporary table of new hands'''
-    
-    cur = conn.cursor()
-    
-    # select hands that have not yet been added
-    # queries NewActions
-    print('Adding new hands to database...')
-    query = '''CREATE TEMPORARY TABLE IF NOT EXISTS NewHands AS
-        SELECT table_id, hand_num
-        FROM NewActions
-        GROUP BY table_id, hand_num'''
-    cur.execute(query)
-    
-    # calculate number of newly-added hands
-    query = 'SELECT COUNT(*) FROM NewHands'
-    cur.execute(query)  
-    num_new = cur.fetchone()[0]
-    print(f'Number of new hands added: {num_new}')
-    
-    conn.commit()
-    cur.close()
-
+    return err
 
 def calc_action(conn, stat_name, stat_cond, stat_cond2='',
                 val='1', join_hands=False, join_p_hands=False):
@@ -505,6 +296,327 @@ def count_action(conn, stat_name, stat_cond):
     # print(query)
     cur.execute(query)
             
+    conn.commit()
+    cur.close()
+
+
+def split_sessions(conn, num_days=0, num_sessions=0, return_all=False):
+    ''' Finds the beginning time of each session within the supplied constraints.
+    Returns the result of a query that finds the first hand of each session
+    (sessions defined by >= TIME_DIFF days between hands) from newest to oldest.
+    Use num_sessions and/or num_days to limit number of returned sessions.
+    By default, the OLDEST date is the last result.
+    Use return_all=True to return all results (as a query) instead of only
+    the oldest result (as a string date).'''
+
+    # query that returns the first hand of each session
+    # (sessions defined by >= 1 day between hands)
+    # orders by most recent sessions first
+
+    # if return_all:
+    # if returning all results, also return session number
+    # adds +1 because first session is skipped
+    query = 'SELECT *, (DENSE_RANK() OVER (ORDER by time)) + 1 AS sn FROM'
+    # else:
+    #    query = 'SELECT * FROM'
+
+    # replaced 'now' with most recent hand time: (SELECT MAX(time) from TableNames)
+    # should select the FIRST hand of the most recent session, not the last XXX
+    query += '''(SELECT t2.time, t2.table_id, t2.hand_num,
+                 julianday(t2.time) - julianday(t1.time) AS time_diff,
+                 julianday((SELECT MAX(time) from TableNames)) - julianday(t2.time) AS time_ago
+                FROM
+                    (SELECT DENSE_RANK() OVER (ORDER BY time) rn,
+                     time, table_id, hand_num
+                    FROM Hands) t1
+                JOIN
+                    (SELECT DENSE_RANK() OVER (ORDER BY time) rn,
+                     time, table_id, hand_num
+                    FROM Hands) t2
+                ON t2.rn = t1.rn + 1)
+            WHERE time_diff >= ?'''
+
+    recent_cur = conn.cursor()
+    begin_time = None
+
+    values = (TIME_DIFF,)
+
+    # limit by days ago
+    if num_days > 0:
+        query += ' AND time_ago <= ?'
+        values += (num_days,)
+
+    query += ' ORDER BY time DESC'
+
+    # limit by number of sessions
+    if num_sessions > 0:
+        query += ' LIMIT ?'
+        values += (num_sessions,)
+
+    recent_cur.execute(query, values)
+
+    if return_all:
+        return recent_cur
+
+    print('Sessions:')
+
+    # for idx in range(1, num_sessions + 1):
+    # begin_time = recent_cur.fetchone()[0]
+    for row in recent_cur:
+        begin_time = row[0]
+        print(begin_time)
+        # sess_num = row[5]
+        # print(row)
+        # print(f'#{sess_num}: {begin_time}')
+
+    if begin_time is None:
+        # nothing returned usually means there is only one session
+        # (e.g., using test db)
+        print('None returned')
+        query = '''SELECT MIN(time)
+                    FROM Hands'''
+        recent_cur.execute(query)
+        (begin_time,) = recent_cur.fetchone()
+        print(begin_time)
+
+    print(f'Returning begin date: {begin_time}')
+    return begin_time
+
+
+def create_stats_table_sparse(conn, db_name, clear_db):
+    '''Creates StatPlayerHands table
+    Wish list: compute stats for new columns only XXX'''
+
+    cur = conn.cursor()
+
+    # delete existing databases
+    # all tourney stat DBs need to be deleted because sess_num is dynamic
+    cur.execute('DROP TABLE IF EXISTS StatTourneyPlaces')
+    cur.execute('DROP TABLE IF EXISTS StatTourneyHands')
+
+    if test_run or clear_db:
+        db_delete = 'y'
+        if clear_db:
+            db_delete = input(f'Clear existing stats tables for {db_name}? (Y/n): ')
+        if db_delete.lower() == 'y' or db_delete == '':
+            cur.execute('DROP TABLE IF EXISTS StatPlayerHands')
+            cur.execute('DROP TABLE IF EXISTS StatPvP')
+            # reduce file size
+            conn.commit()
+            conn.execute('VACUUM')
+            conn.commit()
+
+    # create StatPlayerHands (see run_ methods for stat descriptions)
+    query = '''CREATE TABLE IF NOT EXISTS StatPlayerHands
+        (row_num INTEGER,
+
+         table_id INTEGER,
+         hand_num INTEGER,
+         player_id INTEGER,
+
+         date_added TIMESTAMP(3),
+
+         vpip BOOLEAN,
+         pfr BOOLEAN,
+         n_threebet BOOLEAN,
+         threebet BOOLEAN,
+         n_fourbet BOOLEAN,
+         fourbet BOOLEAN,
+         n_face3bet BOOLEAN,
+         rr3bet BOOLEAN,
+         call3bet BOOLEAN,
+         foldto3bet BOOLEAN,
+         n_face4bet BOOLEAN,
+         foldto4bet BOOLEAN,
+         n_callopen BOOLEAN,
+         callopen BOOLEAN,
+
+         n_cbet_flop BOOLEAN,
+         cbet_flop BOOLEAN,
+         n_cbet_turn BOOLEAN,
+         cbet_turn BOOLEAN,
+         n_cbet_river BOOLEAN,
+         cbet_river BOOLEAN,
+         n_faced_cbet_flop BOOLEAN,
+         foldto_cbet_flop BOOLEAN,
+         raise_cbet_flop BOOLEAN,
+         n_faced_3cbet_flop BOOLEAN,
+         foldto_3cbet_flop BOOLEAN,
+         n_faced_cbet_turn BOOLEAN,
+         foldto_cbet_turn BOOLEAN,
+         n_faced_cbet_river BOOLEAN,
+         foldto_cbet_river BOOLEAN,
+
+         n_stab_flop BOOLEAN,
+         stab_flop BOOLEAN,
+         n_stab_turn BOOLEAN,
+         stab_turn BOOLEAN,
+         n_stab_river BOOLEAN,
+         stab_river BOOLEAN,
+         n_donk_flop BOOLEAN,
+         donk_flop BOOLEAN,
+         n_donk_turn BOOLEAN,
+         donk_turn BOOLEAN,
+         n_donk_river BOOLEAN,
+         donk_river BOOLEAN,
+
+         n_rfi BOOLEAN,
+         rfi BOOLEAN,
+         n_rfi_1 BOOLEAN,
+         rfi_1 BOOLEAN,
+         n_rfi_2 BOOLEAN,
+         rfi_2 BOOLEAN,
+         n_rfi_3 BOOLEAN,
+         rfi_3 BOOLEAN,
+         n_rfi_4 BOOLEAN,
+         rfi_4 BOOLEAN,
+         n_rfi_5 BOOLEAN,
+         rfi_5 BOOLEAN,
+         n_rfi_6 BOOLEAN,
+         rfi_6 BOOLEAN,
+         n_rfi_7 BOOLEAN,
+         rfi_7 BOOLEAN,
+         n_rfi_8 BOOLEAN,
+         rfi_8 BOOLEAN,
+         n_rfi_bb BOOLEAN,
+         rfi_bb BOOLEAN,
+         n_rfi_sb BOOLEAN,
+         rfi_sb BOOLEAN,
+
+         n_wwsf BOOLEAN,
+         wwsf BOOLEAN,
+         won_sd BOOLEAN,
+         n_show BOOLEAN,
+         show BOOLEAN,
+
+         stack_bb FLOAT,
+         balance_bb FLOAT,
+         bal_bb_running FLOAT,
+
+         n_limpr BOOLEAN,
+         limpr BOOLEAN,
+         n_cr_flop BOOLEAN,
+         cr_flop BOOLEAN,
+         n_cr_turn BOOLEAN,
+         cr_turn BOOLEAN,
+         n_cr_river BOOLEAN,
+         cr_river BOOLEAN,
+         n_cr_cbet_flop BOOLEAN,
+         cr_cbet_flop BOOLEAN,
+         n_cr_cbet_any BOOLEAN,
+         cr_cbet_any BOOLEAN,
+
+         n_actions INTEGER DEFAULT 0,
+         n_folds INTEGER DEFAULT 0,
+         n_checks INTEGER DEFAULT 0,
+         n_calls INTEGER DEFAULT 0,
+         n_bets INTEGER DEFAULT 0,
+         n_raises INTEGER DEFAULT 0,
+         n_check_rs INTEGER DEFAULT 0,
+
+         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
+         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
+         UNIQUE(table_id, hand_num, player_id)
+        )'''
+    cur.execute(query)
+
+    query = '''INSERT OR IGNORE INTO StatPlayerHands
+        (table_id, hand_num, player_id)
+        SELECT table_id, hand_num, player_id
+        FROM PlayerHands'''
+    cur.execute(query)
+
+    # create StatPvP table
+    query = '''CREATE TABLE IF NOT EXISTS StatPvP
+        (table_id INTEGER,
+         hand_num INTEGER,
+         player_id INTEGER,
+
+         opp_id INTEGER,
+         net_chips INTEGER,
+         net_bb FLOAT,
+
+         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
+         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
+         FOREIGN KEY(opp_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
+         UNIQUE(table_id, hand_num, player_id, opp_id)
+        )'''
+    cur.execute(query)
+
+    # create StatTourneyPlaces table
+    query = '''CREATE TABLE IF NOT EXISTS StatTourneyPlaces
+        (sess_num INTEGER,
+         place INTEGER,
+         player_id INTEGER,
+         FOREIGN KEY(sess_num) REFERENCES TableNames(sess_num) ON UPDATE CASCADE,
+         FOREIGN KEY(player_id) REFERENCES PlayerNames(player_id) ON UPDATE CASCADE,
+         UNIQUE(sess_num, player_id)
+        )'''
+    cur.execute(query)
+
+    # create StatTourneyHands table
+    query = '''CREATE TABLE IF NOT EXISTS StatTourneyHands
+        (sess_num INTEGER,
+         sess_hand INTEGER,
+         table_id INTEGER,
+         hand_num INTEGER,
+         total_stacks INTEGER,
+         total_players INTEGER,
+         FOREIGN KEY(table_id) REFERENCES TableNames(table_id) ON UPDATE CASCADE,
+         UNIQUE(table_id, hand_num)
+        )'''
+    cur.execute(query)
+
+    conn.commit()
+    cur.close()
+
+
+def create_new_actions_table(conn):
+    '''Creates temporary table of new actions'''
+
+    cur = conn.cursor()
+
+    # select actions from hands that have not yet been added
+    # currently checks for null; check for older date XXX
+    print('Adding new actions to database...')
+    query = '''CREATE TEMPORARY TABLE IF NOT EXISTS NewActions AS
+        SELECT Actions.*
+        FROM Actions JOIN StatPlayerHands USING (table_id, hand_num, player_id)
+        WHERE StatPlayerHands.date_added IS NULL'''
+    cur.execute(query)
+
+    # calculate number of newly-added actions
+    query = 'SELECT COUNT(*) FROM NewActions'
+    cur.execute(query)
+    num_new = cur.fetchone()[0]
+    print(f'Number of new actions added: {num_new}')
+
+    conn.commit()
+    cur.close()
+
+    return num_new
+
+
+def create_new_hands_table(conn):
+    '''Creates temporary table of new hands'''
+
+    cur = conn.cursor()
+
+    # select hands that have not yet been added
+    # queries NewActions
+    print('Adding new hands to database...')
+    query = '''CREATE TEMPORARY TABLE IF NOT EXISTS NewHands AS
+        SELECT table_id, hand_num
+        FROM NewActions
+        GROUP BY table_id, hand_num'''
+    cur.execute(query)
+
+    # calculate number of newly-added hands
+    query = 'SELECT COUNT(*) FROM NewHands'
+    cur.execute(query)
+    num_new = cur.fetchone()[0]
+    print(f'Number of new hands added: {num_new}')
+
     conn.commit()
     cur.close()
 
@@ -1147,7 +1259,12 @@ def run_tourney_stats(conn):
     for row in combined_list:
         # (sess_num, place, player_id) = row
         # print(row)
-        cur.execute(query, row)
+        # UNIQUE constraint can fail in tournament hands
+        # sqlite3.IntegrityError: UNIQUE constraint failed: StatTourneyPlaces.sess_num, StatTourneyPlaces.player_id
+        err = try_query(cur, query, row)
+        if err == 'IntegrityError':
+            print(f'...Error on sess_num/place/player_id: {row}')
+        # cur.execute(query, row)
 
     # insert session hand number, total stacks, and total active players into StatTourneyHands
     # sess_num is again not strictly necessary but much more readable
@@ -1259,59 +1376,61 @@ def run_small_db(source_db):
     
 
 # main body
-
-if test_run:
-    print('<<< TEST RUN >>>')
-    
-# loop through each database (main, Sudbury, etc)
-main_db_actions = 0
-source_db_name = None
-for (real_db_name, test_db_name, hh_subdir, is_tourney, clear_db) in DB_NAME_LIST:
+# code to be run only on direct execution, but not on import
+if __name__ == '__main__':
 
     if test_run:
-        db_name = test_db_name
-    else:
-        db_name = real_db_name
+        print('<<< TEST RUN >>>')
 
-    with sqlite3.connect(db_name) as conn:
-        # conn = sqlite3.connect(db_name)
-        print()
-        print(f'******************** Connecting to database {db_name} ********************')
+    # loop through each database (main, Sudbury, etc)
+    main_db_actions = 0
+    source_db_name = None
+    for (real_db_name, test_db_name, hh_subdir, is_tourney, clear_db) in DB_NAME_LIST:
 
-        create_stats_table_sparse(conn, db_name, clear_db)
-        num_new_actions = create_new_actions_table(conn)
+        if test_run:
+            db_name = test_db_name
+        else:
+            db_name = real_db_name
 
-        # if this is the main database (real or test run), store relevant info for copying to small database
-        if db_name == DB_NAME_LIST[0][0] or db_name == DB_NAME_LIST[0][1]:
-            main_db_actions = num_new_actions
-            source_db_name = db_name
+        with sqlite3.connect(db_name) as conn:
+            # conn = sqlite3.connect(db_name)
+            print()
+            print(f'******************** Connecting to database {db_name} ********************')
 
-        if num_new_actions > 0:
-            create_new_hands_table(conn)
+            create_stats_table_sparse(conn, db_name, clear_db)
+            num_new_actions = create_new_actions_table(conn)
 
-            # create_stats_table(conn)
+            # if this is the main database (real or test run), store relevant info for copying to small database
+            if db_name == DB_NAME_LIST[0][0] or db_name == DB_NAME_LIST[0][1]:
+                main_db_actions = num_new_actions
+                source_db_name = db_name
 
-            run_preflop_stats(conn)
-            run_cbet_stats(conn)
-            run_stab_stats(conn)
-            run_rfi_stats(conn)
-            run_win_stats(conn)
-            run_agg_stats(conn)
-            run_counting_stats(conn)
+            if num_new_actions > 0:
+                create_new_hands_table(conn)
 
-            run_pvp_stats(conn)
-            run_final_stats(conn)
+                # create_stats_table(conn)
 
-        if is_tourney:
-            run_tourney_stats(conn)
+                run_preflop_stats(conn)
+                run_cbet_stats(conn)
+                run_stab_stats(conn)
+                run_rfi_stats(conn)
+                run_win_stats(conn)
+                run_agg_stats(conn)
+                run_counting_stats(conn)
 
-        print()
-        print()
+                run_pvp_stats(conn)
+                run_final_stats(conn)
 
-# run outside main database connection so complete db is copied
-if main_db_actions > -1:
-    # sleep_time = 3
-    # print()
-    # print(f'Pausing for {sleep_time} seconds...')
-    # time.sleep(sleep_time)
-    run_small_db(source_db_name)
+            if is_tourney:
+                run_tourney_stats(conn)
+
+            print()
+            print()
+
+    # run outside main database connection so complete db is copied
+    if main_db_actions > -1:
+        # sleep_time = 3
+        # print()
+        # print(f'Pausing for {sleep_time} seconds...')
+        # time.sleep(sleep_time)
+        run_small_db(source_db_name)
