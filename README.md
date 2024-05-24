@@ -31,3 +31,4 @@ As part of making this whole project open-source and available on GitHub, I plan
 
 Here is an overview of the future plans for this project:
 ![Project plans](https://greglank.github.io/images/database-flowchart.jpg)
+*Flowchart adapted from [Multi Input Output Process](https://poweredtemplate.com/multi-input-output-process-80158/)*
