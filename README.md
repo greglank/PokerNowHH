@@ -22,7 +22,8 @@ The script also outputs a smaller database with only the most recent hands (the 
 To use stats.py,
 1. **Place stats.py in the same directory as hh_sample.sqlite and settings_default.json.**
 2. **Rename settings_default.json to settings.json.** Optionally, you may edit settings.json to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
-3. **Run stats.py**. Use your favorite Python interpreter; see (python.org)[https://www.python.org/about/gettingstarted/] for instructions.
+3. **Run stats.py**. Use your favorite Python interpreter; see [python.org](https://www.python.org/about/gettingstarted/) for instructions.
+`python stats.py`
 
 ## Future Plans
 
