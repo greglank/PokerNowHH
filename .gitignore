@@ -1,0 +1,22 @@
+# Specific Files
+alter_table.py
+generate_equity.py
+history.py
+temp.py
+treys_grl.py
+
+# General Files
+*.bak
+*.csv
+*.hyper
+*.ipynb
+*.old
+*.pkl
+*.sqbpro
+*.sqlite
+*.txt
+*.xlsx
+
+# Directories
+.ipynb_checkpoints/
+__pycache__/
