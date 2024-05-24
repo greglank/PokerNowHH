@@ -2,6 +2,7 @@
 alter_table.py
 generate_equity.py
 history.py
+parse.py
 temp.py
 treys_grl.py
 
