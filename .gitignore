@@ -21,3 +21,6 @@ treys_grl.py
 # Directories
 .ipynb_checkpoints/
 __pycache__/
+
+# Include
+!hh_sample.sqlite
