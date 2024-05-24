@@ -15,12 +15,12 @@ The helper variables are usually boolean variables that indicate whether a hand 
 
 The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
-The script also outputs a smaller database with only the most recent hands (the default is the past month) and with players' last names removed. This step is actually redundant with the sample database I have included here, because hh_sample.sqlite *is* the smaller database already. Normally this smaller database serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
+The script also outputs a smaller database with only the most recent hands (the default is the past month) and with players' last names removed. This step is actually redundant with the sample database I have included here, because hh_small.sqlite *is* the smaller database already. Normally this smaller database serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
 ### stats.py Usage
 
 To use stats.py,
-1. **Place stats.py in the same directory as hh_sample.sqlite and settings_default.json.**
+1. **Place stats.py in the same directory as hh_small.sqlite and settings_default.json.**
 2. **Rename settings_default.json to settings.json.** Optionally, you may edit settings.json to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
 3. **Run stats.py**. Use your favorite Python interpreter; see [python.org](https://www.python.org/about/gettingstarted/) for instructions.<br>
 `python stats.py`
