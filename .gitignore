@@ -23,4 +23,4 @@ treys_grl.py
 __pycache__/
 
 # Include
-!hh_small.sqlite
+!/hh_small.sqlite
