@@ -13,7 +13,7 @@ The Python script, stats.py, takes a SQLite database of no limit Texas hold 'em 
 
 The helper variables are usually boolean variables that indicate whether a player's hand meets the criteria for a particular poker statistic, such as voluntarily put money in pot, continuation bet, etc. Adding these helper variables facilitates easier analysis through SQL queries and allows for more robust visualization through tools like Tableau.
 
-The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
+The script calculates helper variables for all the poker statistics for NLHE outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
 The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in config.toml) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database, going back one month with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
