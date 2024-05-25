@@ -1434,7 +1434,7 @@ if __name__ == '__main__':
             print()
 
     # run outside main database connection so complete db is copied
-    if CREATE_SMALL and main_db_actions > -1:
+    if CREATE_SMALL:
         # sleep_time = 3
         # print()
         # print(f'Pausing for {sleep_time} seconds...')

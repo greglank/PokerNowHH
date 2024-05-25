@@ -2,6 +2,7 @@
 
 # Setting test_run to true uses an alternate 'test' set of input and output databases.
 # Useful for testing and debugging, as it leaves the 'real' databases untouched. (default: false)
+# Note: setting test_run = true will not work for stats.py without first running history.py.
 test_run = true
 
 # Time difference in days before a hand is considered to be part of a new session (default: 0.2)
