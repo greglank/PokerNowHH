@@ -22,7 +22,8 @@ Wish list (XXX):
 ...Likely related to how wwsf/n_wwsf only counts when players take an action on flop, not when they are active
 ...(e.g. they could have gone all-in preflop)
 -Delete tourney tables from small output db
--Allow creation of small output db from databases other than main
+-Allow creation of small db from databases other than main
+-Output demo db alongside small db
 -Run it twice winning hand for second board (needs to be set in history.py first)
 -Duplicate HH file (or duplicate player names) creates redundant entries in finisher list
 ...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)
@@ -1263,15 +1264,16 @@ def run_small_db(source_db):
         # find begin date within SMALL_DAYS
         begin_date = split_sessions(small_conn, num_days=SMALL_DAYS)
         # print(f'Begin date: {begin_date}')
-        
+
         # remove all tables other than those needed by Tableau
         print('Removing unnecessary tables...')
         table_list = ['ActionNames', 'Actions', 'Aliases', 'Stats']
+        # table_list = ['Aliases']
         for table_name in table_list:
             print(f'...Deleting {table_name}')
             query = f'DROP TABLE IF EXISTS {table_name}'
             small_cur.execute(query)
-        
+
         # find db table names
         query = '''SELECT name FROM sqlite_master
                 WHERE type='table'

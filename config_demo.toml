@@ -19,8 +19,8 @@ time_diff = 0.2
 # clear_db: Boolean to prompt to delete the tables in this database, other than PlayerNames/Aliases (default: false)
 # ...Note that test_run = true automatically clears the test database without prompting
 [[db_list]]
-db_name = "hand_history_test.sqlite"
-db_name_test = "hand_history_test.sqlite"
+db_name = "hh_demo.sqlite"
+db_name_test = "hh_demo.sqlite"
 hh_subdir = ""
 is_tourney = false
 clear_db = false
