@@ -5,7 +5,7 @@ Tools for converting and analyzing PokerNow hand histories. Primarily, a set of 
 
 I am in the process of converting my PokerNow hand history tools to open source. This started as a personal project that was not intended to be shared widely, so I have some cleaning up to do! In the meantime, I have shared one of the Python scripts (stats.py) as a proof of concept. It is complete and functional, though not very meaningful without the other scripts.
 
-To put this script in context, see my "Poker Hand History Parser and Database" portfolio page: https://greglank.github.io/parser
+To see where this script fits in the larger project, see my "Poker Hand History Parser and Database" portfolio page: https://greglank.github.io/parser
 
 ## stats.py
 
