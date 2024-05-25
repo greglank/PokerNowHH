@@ -15,13 +15,13 @@ The helper variables are usually boolean variables that indicate whether a hand 
 
 The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
-The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in settings.json) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
+The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in config.toml) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
 ### stats.py Usage
 
 To use stats.py,
-1. **Place stats.py in the same directory as hh_small.sqlite and settings_default.json.**
-2. **Rename settings_default.json to settings.json.** Optionally, you may edit settings.json to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
+1. **Place stats.py in the same directory as hh_small.sqlite and config_default.toml.**
+2. **Rename config_default.toml to config.toml.** Optionally, you may edit config.toml to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
 3. **Run stats.py**. Use your favorite Python interpreter; see [python.org](https://www.python.org/about/gettingstarted/) for instructions.<br>
 `python stats.py`
 
