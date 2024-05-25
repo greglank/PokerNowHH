@@ -14,7 +14,7 @@ time_diff = 0.2
 # ...use "" for no subdirectory, and "subdir\\" for Windows environments
 # is_tourney: Boolean to indicate whether this database consists of tournament hands (default: false)
 # ...For meaningful stats, a database should consist exclusively of either tournament hands or cash game hands
-# clear_db: Flag to delete the tables in this database, other than PlayerNames/Aliases (default: false)
+# clear_db: Boolean to delete the tables in this database, other than PlayerNames/Aliases (default: false)
 [[db_list]]
 db_name = "hand_history.sqlite"
 db_name_test = "hand_history_test.sqlite"
@@ -47,15 +47,21 @@ hh_subdir = "Shakeweights\\"
 is_tourney = false
 clear_db = false
 
-# Name of the small output database and the number of days to retain.
-# There may be some fuzziness around begin and end dates due to time zones and long sessions,
-# so err on the larger side. (default: 32)
+# Name and settings for the optional small output database. The small database retains only the most recent hands
+# and removes players' last names to facilitate posting stats publicly via tools like Tableau.
+# It is based on the MAIN DATABASE ONLY.
+# out_name: Name of the small output database
+# out_name_test: Name of the small output test database when test_run = true
+# num_days: The number of days to retain (default: 32)
+#...There may be some fuzziness around begin and end dates due to time zones and sessions that span midnight
+# create_small: Boolean to create the optional small output database (default: true)
 [small_db]
 out_name = "hh_small.sqlite"
 out_name_test = "hh_small_test.sqlite"
 num_days = 32
+create_small = true
 
-##########
+####################
 # DO NOT EDIT BELOW THIS LINE
 # Shared constants across scripts
 

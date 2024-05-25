@@ -21,61 +21,17 @@ Wish list (XXX):
 -Won w/o SD % is sometimes negative in Tableau: (COUNT([Wwsf])-COUNT([Won Sd]))/COUNT([N Wwsf])
 ...Likely related to how wwsf/n_wwsf only counts when players take an action on flop, not when they are active
 ...(e.g. they could have gone all-in preflop)
--Delete tourney tables from small db
+-Delete tourney tables from small output db
+-Allow creation of small output db from databases other than main
 -Run it twice winning hand for second board (needs to be set in history.py first)
 -Duplicate HH file (or duplicate player names) creates redundant entries in finisher list
-...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)    
+...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)
 """
 
 import sqlite3  # sqlite database
 import shutil  # file copy
 import tomllib  # toml config file
 import time  # pause
-
-# import config file
-with open('config.toml', mode='rb') as f:
-    config = tomllib.load(f)
-
-TEST_RUN = config['test_run']
-TIME_DIFF = config['time_diff']
-if TEST_RUN:
-    SMALL_DB_NAME = config['small_db']['out_name_test']
-else:
-    SMALL_DB_NAME = config['small_db']['out_name']
-SMALL_DAYS = config['small_db']['num_days']
-DB_LIST = config['db_list']  # list of database names and settings
-# CONST = config['const']  # list of constants shared across scripts
-
-# actions for database
-POST_VAL = config['const']['POST_VAL']
-POST_MISSING_VAL = config['const']['POST_MISSING_VAL']  # missing blind post, not credited to player
-POST_MISSED_VAL = config['const']['POST_MISSED_VAL']  # missed blind post, credited to player
-FOLD_VAL = config['const']['FOLD_VAL']
-CHECK_VAL = config['const']['CHECK_VAL']
-CALL_VAL = config['const']['CALL_VAL']
-BET_VAL = config['const']['BET_VAL']
-RAISE_VAL = config['const']['RAISE_VAL']
-
-# tournament actions for database
-QUIT_VAL = config['const']['QUIT_VAL']
-BUYIN_VAL = config['const']['BUYIN_VAL']
-REBUY_VAL = config['const']['REBUY_VAL']
-
-# streets for database
-PREFLOP_VAL = config['const']['PREFLOP_VAL']
-FLOP_VAL = config['const']['FLOP_VAL']  # flop=3 is more human readable
-TURN_VAL = config['const']['TURN_VAL']
-RIVER_VAL = config['const']['RIVER_VAL']
-SHOWDOWN_VAL = config['const']['SHOWDOWN_VAL']
-
-# blind values to add to position; SB is bigger because it's the worst position
-STRADDLE_VAL = config['const']['STRADDLE_VAL']
-BB_VAL = config['const']['BB_VAL']
-SB_VAL = config['const']['SB_VAL']
-
-# minimum and maximum positions at table
-POS_MIN = config['const']['POS_MIN']  # button
-POS_MAX = config['const']['POS_MAX']  # utg at 10-player table
 
 
 def try_query(cur, query, values=None):
@@ -1375,6 +1331,52 @@ def run_small_db(source_db):
 # main body
 if __name__ == '__main__':
 
+    # import config file
+    with open('config.toml', mode='rb') as f:
+        config = tomllib.load(f)
+
+    TEST_RUN = config['test_run']
+    TIME_DIFF = config['time_diff']
+    if TEST_RUN:
+        SMALL_DB_NAME = config['small_db']['out_name_test']
+    else:
+        SMALL_DB_NAME = config['small_db']['out_name']
+    SMALL_DAYS = config['small_db']['num_days']
+    CREATE_SMALL = config['small_db']['create_small']
+    DB_LIST = config['db_list']  # list of database names and settings
+
+    # actions for database
+    POST_VAL = config['const']['POST_VAL']
+    POST_MISSING_VAL = config['const']['POST_MISSING_VAL']  # missing blind post, not credited to player
+    POST_MISSED_VAL = config['const']['POST_MISSED_VAL']  # missed blind post, credited to player
+    FOLD_VAL = config['const']['FOLD_VAL']
+    CHECK_VAL = config['const']['CHECK_VAL']
+    CALL_VAL = config['const']['CALL_VAL']
+    BET_VAL = config['const']['BET_VAL']
+    RAISE_VAL = config['const']['RAISE_VAL']
+
+    # tournament actions for database
+    QUIT_VAL = config['const']['QUIT_VAL']
+    BUYIN_VAL = config['const']['BUYIN_VAL']
+    REBUY_VAL = config['const']['REBUY_VAL']
+
+    # streets for database
+    PREFLOP_VAL = config['const']['PREFLOP_VAL']
+    FLOP_VAL = config['const']['FLOP_VAL']  # flop=3 is more human readable
+    TURN_VAL = config['const']['TURN_VAL']
+    RIVER_VAL = config['const']['RIVER_VAL']
+    SHOWDOWN_VAL = config['const']['SHOWDOWN_VAL']
+
+    # blind values to add to position; SB is bigger because it's the worst position
+    STRADDLE_VAL = config['const']['STRADDLE_VAL']
+    BB_VAL = config['const']['BB_VAL']
+    SB_VAL = config['const']['SB_VAL']
+
+    # minimum and maximum positions at table
+    POS_MIN = config['const']['POS_MIN']  # button
+    POS_MAX = config['const']['POS_MAX']  # utg at 10-player table
+
+    # begin program logic
     if TEST_RUN:
         print('<<< TEST RUN >>>')
 
@@ -1432,7 +1434,7 @@ if __name__ == '__main__':
             print()
 
     # run outside main database connection so complete db is copied
-    if main_db_actions > -1:
+    if CREATE_SMALL and main_db_actions > -1:
         # sleep_time = 3
         # print()
         # print(f'Pausing for {sleep_time} seconds...')
