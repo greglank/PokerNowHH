@@ -29,9 +29,10 @@ Wish list (XXX):
 
 import sqlite3  # sqlite database
 import shutil  # file copy
+import tomllib  # toml config file
 import time  # pause
-# from Poker.parse import split_sessions  # find most recent sessions
 
+"""
 # test run
 # use clear_db boolean in DB_NAME_LIST to prompt to delete tables (other than PlayerNames/Aliases)
 test_run = False
@@ -40,12 +41,20 @@ DB_NAME_LIST = [('hand_history.sqlite', 'hand_history_test.sqlite', '', False, F
                 ('hh_sudbury.sqlite', 'hh_sudbury_test.sqlite', 'Sudbury\\', True, False),
                 ('hh_fft.sqlite', 'hh_fft_test.sqlite', 'FFT\\', True, False),
                 ('hh_shakeweights.sqlite', 'hh_shakeweights_test.sqlite', 'Shakeweights\\', False, False)]
+"""
 
+# import config file
+with open("config.toml", mode="rb") as f:
+    config = tomllib.load(f)
+
+test_run = config['test_run']
+DB_NAME_LIST = config['DB_NAME_LIST']
 if test_run:
-    SMALL_DB_NAME = 'hh_small_test.sqlite'
+    SMALL_DB_NAME = config['SMALL_DB_TEST']
 else:
-    SMALL_DB_NAME = 'hh_small.sqlite'
-    
+    SMALL_DB_NAME = config['SMALL_DB']
+
+
 SMALL_DAYS = 32  # number of days for small database copy
 TIME_DIFF = 0.2  # time difference (in days) between session hands
 

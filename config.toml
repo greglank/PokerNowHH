@@ -1,0 +1,12 @@
+# test run
+test_run = true
+
+# DB_NAME_LIST is a list of tuples: (db_name, test_db_name, hh_subdir, is_tourney, clear_db)
+# use clear_db boolean in DB_NAME_LIST to prompt to delete tables (other than PlayerNames/Aliases)
+DB_NAME_LIST = [["hand_history.sqlite", "hand_history_test.sqlite", "", false, false],
+                ["hh_sudbury.sqlite", "hh_sudbury_test.sqlite", "Sudbury\\", true, false],
+                ["hh_fft.sqlite", "hh_fft_test.sqlite", "FFT\\", true, false],
+                ["hh_shakeweights.sqlite", "hh_shakeweights_test.sqlite", "Shakeweights\\", false, false]]
+
+SMALL_DB = "hh_small.sqlite"
+SMALL_DB_TEST = "hh_small_test.sqlite"
