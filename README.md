@@ -22,6 +22,8 @@ To use stats.py,
 2. **Place stats.py in the same directory as hh_demo.sqlite and config.toml.** The database, hh_demo.sqlite, is a sample hand history database included to make stats.py functional without the other scripts.
 3. **Run stats.py**. Use your favorite Python interpreter (e.g. `python stats.py`); see [python.org](https://www.python.org/about/gettingstarted/) for instructions.
 
+Again, please note that stats.py is complete and functional, though not very meaningful without the other scripts.
+
 ## Future Plans
 
 As part of making this whole project open-source and available on GitHub, I plan to add a more robust set of database inputs and outputs. This includes a GUI for the database so users can look up queries without having to know SQL or the database structure, and a hand history converter that can output hands to a more common hand history format, like Poker Stars, that is more widely recognized by other software tools.
