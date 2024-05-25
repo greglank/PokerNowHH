@@ -15,7 +15,7 @@ The helper variables are usually boolean variables that indicate whether a playe
 
 The script calculates helper variables for all the poker statistics for NLHE outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
-The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in config.toml) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database, going back one month with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
+The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in config.toml) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of my full hand history database, going back one month with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
 ### stats.py Usage
 
