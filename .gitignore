@@ -19,5 +19,5 @@
 __pycache__/
 
 # Include
-!/hh_small.sqlite
+!/hand_history_test.sqlite
 !/stats.py

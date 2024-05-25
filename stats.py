@@ -1260,7 +1260,7 @@ def run_small_db(source_db):
     with sqlite3.connect(SMALL_DB_NAME) as small_conn:
         small_cur = small_conn.cursor()
     
-        # find begin date within SMALL_DAYS (e.g. 31)
+        # find begin date within SMALL_DAYS
         begin_date = split_sessions(small_conn, num_days=SMALL_DAYS)
         # print(f'Begin date: {begin_date}')
         
@@ -1279,7 +1279,7 @@ def run_small_db(source_db):
         small_cur.execute(query)
         table_list = small_cur.fetchall()
         
-        # do TableNames db table last (otherwise query will fail!)
+        # add TableNames db table last (otherwise query will fail!)
         try:
             table_list.remove(('TableNames',))
         except ValueError:
@@ -1332,7 +1332,7 @@ def run_small_db(source_db):
 if __name__ == '__main__':
 
     # import config file
-    with open('config.toml', mode='rb') as f:
+    with open('config_demo.toml', mode='rb') as f:
         config = tomllib.load(f)
 
     TEST_RUN = config['test_run']
