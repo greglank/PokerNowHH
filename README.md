@@ -9,19 +9,19 @@ For a description of the complete set of scripts, see my "Poker Hand History Par
 
 ## stats.py
 
-The Python script, stats.py, takes as input a SQLite database of no limit Texas hold 'em PokerNow hand histories created by history.py (upload to GitHub pending) and calculates a set of 'helper' variables for poker statistics. It modifies the database tables whose names begin with 'Stat' (primarily StatPlayerHands) to record these helper variables for hands and actions that do not yet have them.
+The Python script, stats.py, takes as input a SQLite database of no limit Texas hold 'em PokerNow hand histories created by history.py (upload to GitHub pending) and calculates a set of 'helper' variables for poker statistics. It modifies the database tables whose names begin with 'Stat' (primarily StatPlayerHands) to record these helper variables for players' hands that do not yet have them.
 
-The helper variables are usually boolean variables that indicate whether a hand or action meets the criteria for a particular poker statistic, such as voluntarily put money in pot (VPIP), continuation bet (cbet), etc. Adding these helper variables facilitates easier analysis through SQL queries and allows for more robust visualization through tools like Tableau.
+The helper variables are usually boolean variables that indicate whether a player's hand meets the criteria for a particular poker statistic, such as voluntarily put money in pot (VPIP), continuation bet (cbet), etc. Adding these helper variables facilitates easier analysis through SQL queries and allows for more robust visualization through tools like Tableau.
 
 The script calculates helper variables for all the poker statistics for no limit Texas hold 'em outlined in *The Grinder's Manual* by Peter Clarke, plus a few others that I created. These statistics are defined in comments within stats.py, with a page number reference to *The Grinder's Manual* where applicable. Both cash games and tournaments are supported, but most of the stats are geared towards cash game play.
 
-The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in settings.json) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
+The script also outputs a smaller database with only the most recent hands (the default is 10 days, configurable in config.toml) and with players' last names removed. The sample database included here, hh_small.sqlite, is actually a small version of the the full hand history database, going back one month with last names removed already. It serves as the basis for the public Tableau dashboard described on my "Poker Visualization" portfolio page: https://greglank.github.io/visualization
 
 ### stats.py Usage
 
 To use stats.py,
-1. **Place stats.py in the same directory as hh_small.sqlite and settings_default.json.**
-2. **Rename settings_default.json to settings.json.** Optionally, you may edit settings.json to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
+1. **Place stats.py in the same directory as hh_small.sqlite and config_default.toml.** hh_small.sqlite is a sample hand history database.
+2. **Copy config_default.toml to config.toml.** Optionally, you may edit config.toml to point to a different hand history database, or to multiple hand history databases, but it is best left unedited until I am able to publish the other scripts to GitHub.
 3. **Run stats.py**. Use your favorite Python interpreter; see [python.org](https://www.python.org/about/gettingstarted/) for instructions.<br>
 `python stats.py`
 
