@@ -1334,7 +1334,7 @@ def run_small_db(source_db):
 if __name__ == '__main__':
 
     # import config file
-    with open('config_demo.toml', mode='rb') as f:
+    with open('config.toml', mode='rb') as f:
         config = tomllib.load(f)
 
     TEST_RUN = config['test_run']
