@@ -1,10 +1,5 @@
 # Specific Files
-alter_table.py
-generate_equity.py
-history.py
-parse.py
-temp.py
-treys_grl.py
+/config.toml
 
 # General Files
 *.bak
@@ -13,6 +8,7 @@ treys_grl.py
 *.ipynb
 *.old
 *.pkl
+*.py
 *.sqbpro
 *.sqlite
 *.txt
@@ -24,3 +20,4 @@ __pycache__/
 
 # Include
 !/hh_small.sqlite
+!/stats.py
