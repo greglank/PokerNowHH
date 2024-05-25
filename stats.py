@@ -4,17 +4,18 @@ Created on Thu Jun  9 11:01:12 2022
 
 @author: greglank
 
-Script takes as input a SQLite database of no limit Texas hold 'em PokerNow hand histories created by
-history.py and calculates a set of 'helper' variables for poker statistics. It modifies the database tables
-whose names begin with 'Stat' (primarily StatPlayerHands) to record these helper variables for hands
-and actions that do not yet have them. The script also outputs a smaller database with only the most recent
-hands and with players' last names removed.
+Script takes a SQLite database of no limit Texas hold 'em (NLHE) PokerNow hand histories created by history.py
+and calculates a set of 'helper' variables for poker statistics. It modifies the database tables whose names begin
+with 'Stat' (primarily StatPlayerHands) to record these helper variables for hands that do not yet have them.
+The script also outputs a smaller database with only the most recent hands and with players' last names removed.
+Uses config.toml for configuration.
+"""
 
-
+"""
 Wish list (XXX):
 -Calculate only new columns (instead of resetting entire db):
     1. Add boolean variable in calc methods to use NewActions vs Actions
-    2. Switch back to conditional ALTER TABLE for new columns
+    2. Use conditional ALTER TABLE for new columns
     -set boolean variable (e.g. list of column names) here
 -Remove duplicate sess_num columns?
 -Won w/o SD % is sometimes negative in Tableau: (COUNT([Wwsf])-COUNT([Won Sd]))/COUNT([N Wwsf])
@@ -23,8 +24,7 @@ Wish list (XXX):
 -Delete tourney tables from small db
 -Run it twice winning hand for second board (needs to be set in history.py first)
 -Duplicate HH file (or duplicate player names) creates redundant entries in finisher list
-...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)
-    
+...(unique constraint fails when adding StatTourneyPlaces.sess_num and StatTourneyPlaces.player_id)    
 """
 
 import sqlite3  # sqlite database
@@ -32,62 +32,50 @@ import shutil  # file copy
 import tomllib  # toml config file
 import time  # pause
 
-"""
-# test run
-# use clear_db boolean in DB_NAME_LIST to prompt to delete tables (other than PlayerNames/Aliases)
-test_run = False
-# DB_NAME_LIST is a list of tuples: (db_name, test_db_name, hh_subdir, is_tourney, clear_db)
-DB_NAME_LIST = [('hand_history.sqlite', 'hand_history_test.sqlite', '', False, False),
-                ('hh_sudbury.sqlite', 'hh_sudbury_test.sqlite', 'Sudbury\\', True, False),
-                ('hh_fft.sqlite', 'hh_fft_test.sqlite', 'FFT\\', True, False),
-                ('hh_shakeweights.sqlite', 'hh_shakeweights_test.sqlite', 'Shakeweights\\', False, False)]
-"""
-
 # import config file
-with open("config.toml", mode="rb") as f:
+with open('config.toml', mode='rb') as f:
     config = tomllib.load(f)
 
-test_run = config['test_run']
-DB_NAME_LIST = config['DB_NAME_LIST']
-if test_run:
-    SMALL_DB_NAME = config['SMALL_DB_TEST']
+TEST_RUN = config['test_run']
+TIME_DIFF = config['time_diff']
+if TEST_RUN:
+    SMALL_DB_NAME = config['small_db']['out_name_test']
 else:
-    SMALL_DB_NAME = config['SMALL_DB']
-
-
-SMALL_DAYS = 32  # number of days for small database copy
-TIME_DIFF = 0.2  # time difference (in days) between session hands
+    SMALL_DB_NAME = config['small_db']['out_name']
+SMALL_DAYS = config['small_db']['num_days']
+DB_LIST = config['db_list']  # list of database names and settings
+# CONST = config['const']  # list of constants shared across scripts
 
 # actions for database
-POST_VAL = 1
-POST_MISSING_VAL = 2  # missing blind post, not credited to player
-POST_MISSED_VAL = 3  # missed blind post, credited to player
-FOLD_VAL = 4
-CHECK_VAL = 5
-CALL_VAL = 6
-BET_VAL = 7
-RAISE_VAL = 8
+POST_VAL = config['const']['POST_VAL']
+POST_MISSING_VAL = config['const']['POST_MISSING_VAL']  # missing blind post, not credited to player
+POST_MISSED_VAL = config['const']['POST_MISSED_VAL']  # missed blind post, credited to player
+FOLD_VAL = config['const']['FOLD_VAL']
+CHECK_VAL = config['const']['CHECK_VAL']
+CALL_VAL = config['const']['CALL_VAL']
+BET_VAL = config['const']['BET_VAL']
+RAISE_VAL = config['const']['RAISE_VAL']
 
 # tournament actions for database
-QUIT_VAL = 0
-BUYIN_VAL = 1
-REBUY_VAL = 2
+QUIT_VAL = config['const']['QUIT_VAL']
+BUYIN_VAL = config['const']['BUYIN_VAL']
+REBUY_VAL = config['const']['REBUY_VAL']
 
-# streets for internal representation and for database
-PREFLOP_VAL = 1
-FLOP_VAL = 3  # flop=3 is more human readable
-TURN_VAL = 4
-RIVER_VAL = 5
-SHOWDOWN_VAL = 6
+# streets for database
+PREFLOP_VAL = config['const']['PREFLOP_VAL']
+FLOP_VAL = config['const']['FLOP_VAL']  # flop=3 is more human readable
+TURN_VAL = config['const']['TURN_VAL']
+RIVER_VAL = config['const']['RIVER_VAL']
+SHOWDOWN_VAL = config['const']['SHOWDOWN_VAL']
 
 # blind values to add to position; SB is bigger because it's the worst position
-STRADDLE_VAL = 10
-BB_VAL = 20
-SB_VAL = 30
+STRADDLE_VAL = config['const']['STRADDLE_VAL']
+BB_VAL = config['const']['BB_VAL']
+SB_VAL = config['const']['SB_VAL']
 
 # minimum and maximum positions at table
-POS_MIN = 1  # button
-POS_MAX = 8  # utg at 10-player table
+POS_MIN = config['const']['POS_MIN']  # button
+POS_MAX = config['const']['POS_MAX']  # utg at 10-player table
 
 
 def try_query(cur, query, values=None):
@@ -403,7 +391,7 @@ def create_stats_table_sparse(conn, db_name, clear_db):
     cur.execute('DROP TABLE IF EXISTS StatTourneyPlaces')
     cur.execute('DROP TABLE IF EXISTS StatTourneyHands')
 
-    if test_run or clear_db:
+    if TEST_RUN or clear_db:
         db_delete = 'y'
         if clear_db:
             db_delete = input(f'Clear existing stats tables for {db_name}? (Y/n): ')
@@ -1189,7 +1177,7 @@ def run_tourney_stats(conn):
     cur = conn.cursor()
 
     # add sess_num to TourneyActions
-    # can't rely on JOIN with TableNames because DELETE won't work
+    # can't rely on JOIN with TableNames because later DELETE won't work
     query = '''UPDATE TourneyActions
     SET sess_num = (
       SELECT tn.sess_num
@@ -1385,22 +1373,26 @@ def run_small_db(source_db):
     
 
 # main body
-# code to be run only on direct execution, but not on import
 if __name__ == '__main__':
 
-    if test_run:
+    if TEST_RUN:
         print('<<< TEST RUN >>>')
 
-    # loop through each database (main, Sudbury, etc)
+    # loop through each database
     main_db_actions = 0
     source_db_name = None
-    for (real_db_name, test_db_name, hh_subdir, is_tourney, clear_db) in DB_NAME_LIST:
+    for db in DB_LIST:
 
-        if test_run:
+        real_db_name = db['db_name']
+        test_db_name = db['db_name_test']
+        is_tourney = db['is_tourney']
+        clear_db = db['clear_db']
+        if TEST_RUN:
             db_name = test_db_name
         else:
             db_name = real_db_name
 
+        # connect to database
         with sqlite3.connect(db_name) as conn:
             # conn = sqlite3.connect(db_name)
             print()
@@ -1410,15 +1402,17 @@ if __name__ == '__main__':
             num_new_actions = create_new_actions_table(conn)
 
             # if this is the main database (real or test run), store relevant info for copying to small database
-            if db_name == DB_NAME_LIST[0][0] or db_name == DB_NAME_LIST[0][1]:
+            if db_name == DB_LIST[0]['db_name'] or db_name == DB_LIST[0]['db_name_test']:
                 main_db_actions = num_new_actions
                 source_db_name = db_name
 
+            # skip if no new actions are added
             if num_new_actions > 0:
                 create_new_hands_table(conn)
 
                 # create_stats_table(conn)
 
+                # call helper methods
                 run_preflop_stats(conn)
                 run_cbet_stats(conn)
                 run_stab_stats(conn)
@@ -1426,12 +1420,13 @@ if __name__ == '__main__':
                 run_win_stats(conn)
                 run_agg_stats(conn)
                 run_counting_stats(conn)
-
                 run_pvp_stats(conn)
                 run_final_stats(conn)
 
-            if is_tourney:
-                run_tourney_stats(conn)
+                # run tournament stats
+                # should tournament stats be run even if no new actions are added? XXX
+                if is_tourney:
+                    run_tourney_stats(conn)
 
             print()
             print()
