@@ -22,8 +22,7 @@ The script also outputs a smaller database with only the most recent hands (the 
 To use stats.py,
 1. **Place stats.py in the same directory as hh_small.sqlite and config_default.toml.** hh_small.sqlite is a sample hand history database included to make stats.py functional without the other scripts.
 2. **Copy config_default.toml to config.toml.** Optionally, you may edit config.toml to point to a different hand history database, or to multiple hand history databases. The stats tables are already complete in the sample database; editing config.toml to set `clear_db = true` for the sample database will allow you to delete and re-create the stats tables.
-3. **Run stats.py**. Use your favorite Python interpreter; see [python.org](https://www.python.org/about/gettingstarted/) for instructions.<br>
-`python stats.py`
+3. **Run stats.py**. Use your favorite Python interpreter (e.g. `python stats.py`); see [python.org](https://www.python.org/about/gettingstarted/) for instructions.
 
 ## Future Plans
 
