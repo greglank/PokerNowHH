@@ -263,18 +263,11 @@ def split_sessions(conn, num_days=0, num_sessions=0, return_all=False):
     Use return_all=True to return all results (as a query) instead of only
     the oldest result (as a string date).'''
 
-    # query that returns the first hand of each session
-    # (sessions defined by >= 1 day between hands)
     # orders by most recent sessions first
-
-    # if return_all:
-    # if returning all results, also return session number
     # adds +1 because first session is skipped
     query = 'SELECT *, (DENSE_RANK() OVER (ORDER by time)) + 1 AS sn FROM'
-    # else:
-    #    query = 'SELECT * FROM'
 
-    # replaced 'now' with most recent hand time: (SELECT MAX(time) from TableNames)
+    # most recent hand time: (SELECT MAX(time) from TableNames)
     # should select the FIRST hand of the most recent session, not the last XXX
     query += '''(SELECT t2.time, t2.table_id, t2.hand_num,
                  julianday(t2.time) - julianday(t1.time) AS time_diff,
@@ -314,8 +307,6 @@ def split_sessions(conn, num_days=0, num_sessions=0, return_all=False):
 
     print('Sessions:')
 
-    # for idx in range(1, num_sessions + 1):
-    # begin_time = recent_cur.fetchone()[0]
     for row in recent_cur:
         begin_time = row[0]
         print(begin_time)
